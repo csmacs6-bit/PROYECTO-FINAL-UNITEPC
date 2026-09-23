@@ -3,26 +3,25 @@ const USERS_KEY = 'tm_registered_users'
 
 export const demoUsers = [
   {
-    fullName: 'Administrador del Sistema',
+    fullName: 'Administrador',
     username: 'admin',
     password: 'admin123',
     role: 'Administrador',
     status: 'Activo',
   },
   {
-    fullName: 'Operador de Logistica',
+    fullName: 'Operador',
     username: 'operador',
     password: 'op2026',
     role: 'Operador',
     status: 'Activo',
   },
   {
-    fullName: 'Juan Mamani Condori',
-    username: 'jmamani',
+    fullName: 'Chofer',
+    username: 'chofer',
     password: 'chofer123',
     role: 'Chofer',
     status: 'Activo',
-    driver: 'Juan Mamani Condori - 2341-CBB',
   },
 ]
 

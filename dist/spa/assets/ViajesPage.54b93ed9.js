@@ -1,0 +1,1 @@
+import{G as e}from"./GenericModulePage.1b7af226.js";import{o,c as r}from"./index.7f677203.js";import"./QBanner.820cd98c.js";import"./uid.2a524a9e.js";import"./use-dark.1dab0b30.js";import"./QPage.7b34c687.js";import"./mock.c521a02e.js";import"./StatusBadge.8390cf11.js";const f={__name:"ViajesPage",setup(t){return(a,m)=>(o(),r(e,{"module-key":"viajes"}))}};export{f as default};

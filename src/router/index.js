@@ -14,6 +14,22 @@ router.beforeEach((to) => {
     return '/login'
   }
 
+  if (to.path === '/dashboard' && session?.role === 'Chofer') {
+    return '/chofer/dashboard'
+  }
+
+  if (
+    session?.role === 'Chofer' &&
+    to.meta.requiresAuth &&
+    to.path !== '/chofer/dashboard'
+  ) {
+    return '/chofer/dashboard'
+  }
+
+  if (to.meta.adminOnly && session?.role !== 'Administrador') {
+    return '/dashboard'
+  }
+
   if (to.meta.guestOnly && session) {
     return '/dashboard'
   }

@@ -68,8 +68,7 @@
         </q-card>
 
         <p class="register-link">
-          Eres conductor?
-          <router-link to="/register">Registrarse</router-link>
+          <router-link to="/register">Registrate ahora</router-link>
         </p>
       </div>
     </section>

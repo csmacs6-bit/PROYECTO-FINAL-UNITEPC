@@ -1,0 +1,1 @@
+import{G as r}from"./GenericModulePage.1b7af226.js";import{o,c as e}from"./index.7f677203.js";import"./QBanner.820cd98c.js";import"./uid.2a524a9e.js";import"./use-dark.1dab0b30.js";import"./QPage.7b34c687.js";import"./mock.c521a02e.js";import"./StatusBadge.8390cf11.js";const f={__name:"CargasPage",setup(t){return(a,m)=>(o(),e(r,{"module-key":"cargas"}))}};export{f as default};

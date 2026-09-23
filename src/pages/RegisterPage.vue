@@ -22,7 +22,7 @@
                 v-model.trim="form.fullName"
                 outlined
                 label="Nombre completo"
-                placeholder="Ej. Juan Mamani Condori"
+                placeholder="Ingresa tu nombre completo"
                 class="tm-input"
                 :error="submitted && !form.fullName"
                 error-message="Ingresa tu nombre completo."
@@ -36,7 +36,7 @@
                 v-model.trim="form.username"
                 outlined
                 label="Nombre de usuario"
-                placeholder="jmamani"
+                placeholder="Ingresa tu usuario"
                 class="tm-input"
                 :error="submitted && !form.username"
                 error-message="Ingresa un nombre de usuario."

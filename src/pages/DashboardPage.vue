@@ -1,796 +1,576 @@
 <template>
-  <q-page class="dashboard-page">
-    <div class="dashboard-shell">
-      <header class="topbar">
-        <div class="brand-lockup">
-          <div class="brand-badge">
-            <q-icon name="local_shipping" />
+  <q-page class="page">
+    <section class="hero-card">
+      <div class="hero-copy">
+        <p>Panel de control</p>
+        <h1>Transportes Merida</h1>
+        <span>{{ todayLabel }}</span>
+
+        <div class="hero-metrics">
+          <article>
+            <strong>{{ trucks.length }}</strong>
+            <span>Unidades</span>
+          </article>
+          <article>
+            <strong>{{ activeTrips }}</strong>
+            <span>Viajes activos</span>
+          </article>
+          <article>
+            <strong>{{ maintenance.length }}</strong>
+            <span>Mantenimientos</span>
+          </article>
+        </div>
+      </div>
+
+      <div class="hero-thumb">
+        <div />
+        <span>Flota Transportes Merida</span>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <kpi-card label="Camiones" :value="trucks.length" icon="local_shipping" />
+      <kpi-card label="Viajes" :value="trips.length" icon="route" />
+      <kpi-card label="Ingresos" :value="money(totalFreight)" icon="payments" />
+      <kpi-card label="Combustible" :value="`${totalLiters} L`" icon="local_gas_station" />
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel finance-panel">
+        <header>
+          <h2>Resumen Financiero de Viajes</h2>
+          <div class="panel-thumb" />
+        </header>
+
+        <div class="finance-grid">
+          <div>
+            <span>Fletes Cobrados</span>
+            <strong>{{ money(totalFreight) }}</strong>
+          </div>
+          <div class="danger">
+            <span>Total Gastos</span>
+            <strong>{{ money(totalExpenses) }}</strong>
           </div>
           <div>
-            <p class="eyebrow">Panel principal</p>
-            <h1>Transportes Merida</h1>
+            <span>Ganancia Neta</span>
+            <strong>{{ money(netProfit) }}</strong>
           </div>
         </div>
 
-        <div class="user-actions">
-          <div class="user-pill">
-            <span>{{ session?.role }}</span>
-            <strong>@{{ session?.username }}</strong>
+        <div class="progress-block">
+          <div>
+            <span>Margen de rentabilidad</span>
+            <strong>{{ margin }}%</strong>
           </div>
-          <q-btn
-            outline
-            no-caps
-            color="negative"
-            icon="logout"
-            label="Cerrar sesion"
-            @click="closeSession"
-          />
+          <q-linear-progress :value="margin / 100" rounded color="primary" size="10px" />
+        </div>
+      </article>
+
+      <article class="panel fleet-panel">
+        <header>
+          <h2>Estado de Flota</h2>
+        </header>
+
+        <div class="fleet-list">
+          <div v-for="item in fleetState" :key="item.label">
+            <div>
+              <span class="dot" :class="item.tone" />
+              <strong>{{ item.label }}</strong>
+              <em>{{ item.count }}</em>
+            </div>
+            <q-linear-progress :value="fleetProgress(item.count)" rounded :color="item.color" size="8px" />
+          </div>
+        </div>
+
+        <div class="fleet-image" />
+      </article>
+    </section>
+
+    <section class="panel">
+      <header class="section-header">
+        <div>
+          <h2>Viajes Recientes</h2>
+          <p>Ultimos movimientos operativos registrados.</p>
         </div>
       </header>
 
-      <section class="operations-hero">
-        <div class="hero-copy">
-          <p class="eyebrow">Proyecto de transporte</p>
-          <h2>Control visual de camiones, viajes y conductores</h2>
-          <p class="hero-text">
-            Bienvenido, {{ session?.fullName }}. Esta es la primera vista visual del sistema para presentar el modulo inicial del proyecto.
-          </p>
-
-          <div class="hero-actions">
-            <q-btn unelevated no-caps icon="add_road" label="Nuevo viaje" class="primary-action" />
-            <q-btn flat no-caps icon="map" label="Ver rutas" class="secondary-action" />
-          </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Descripcion</th>
+              <th>Ruta</th>
+              <th>Flete</th>
+              <th>Ganancia</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody v-if="trips.length">
+            <tr v-for="trip in trips" :key="trip.id">
+              <td>{{ trip.date }}</td>
+              <td>{{ trip.description }}</td>
+              <td>{{ trip.origin }} -> {{ trip.destination }}</td>
+              <td>{{ money(trip.freight) }}</td>
+              <td>{{ money(tripProfit(trip)) }}</td>
+              <td><status-badge :label="trip.status" /></td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!trips.length" class="empty-state">
+          <q-icon name="local_shipping" />
+          <strong>Sin viajes registrados</strong>
+          <span>Los viajes apareceran aqui cuando sean creados.</span>
         </div>
+      </div>
+    </section>
 
-        <div class="hero-visual">
-          <img src="/img/truck-hero.png" alt="Camion de carga pesada en ruta" />
-          <div class="tracking-card">
-            <span>Unidad destacada</span>
-            <strong>CBB-2341</strong>
-            <p>Cochabamba - Santa Cruz</p>
+    <section class="panel alert-panel">
+      <header>
+        <q-icon name="warning" />
+        <h2>Alertas de Mantenimiento</h2>
+      </header>
+
+      <div v-if="maintenance.length" class="maintenance-list">
+        <article v-for="item in maintenance" :key="item.id">
+          <q-icon name="build" />
+          <div>
+            <strong>{{ item.description }}</strong>
+            <span>{{ item.truck }} - {{ item.date }} - {{ item.workshop }}</span>
           </div>
-        </div>
-      </section>
-
-      <section class="summary-grid">
-        <article v-for="item in stats" :key="item.label" class="summary-card" :class="item.tone">
-          <q-icon :name="item.icon" />
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
+          <status-badge :label="item.status" />
         </article>
-      </section>
-
-      <section class="workspace-grid">
-        <article class="truck-board panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Camiones</p>
-              <h3>Estado de camiones</h3>
-            </div>
-            <q-badge color="green-7" label="Activo" />
-          </div>
-
-          <div class="truck-list">
-            <div v-for="truck in trucks" :key="truck.plate" class="truck-row">
-              <div class="truck-photo" aria-hidden="true"></div>
-              <div class="truck-info">
-                <div class="truck-title">
-                  <strong>{{ truck.plate }}</strong>
-                  <span :class="['status-dot', truck.tone]">{{ truck.status }}</span>
-                </div>
-                <p>{{ truck.driver }}</p>
-                <small>{{ truck.route }}</small>
-                <q-linear-progress rounded size="6px" :value="truck.progress" :color="truck.color" />
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <article class="route-panel panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Rutas</p>
-              <h3>Viajes de hoy</h3>
-            </div>
-            <q-icon name="route" />
-          </div>
-
-          <div class="route-map">
-            <div class="route-line"></div>
-            <div v-for="point in routePoints" :key="point.city" class="route-point" :style="point.style">
-              <span></span>
-              <strong>{{ point.city }}</strong>
-            </div>
-          </div>
-
-          <div class="route-summary">
-            <div>
-              <span>Salida</span>
-              <strong>07:30</strong>
-            </div>
-            <div>
-              <span>Carga</span>
-              <strong>22 tn</strong>
-            </div>
-            <div>
-              <span>ETA</span>
-              <strong>18:40</strong>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section class="bottom-grid">
-        <article class="panel module-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Modulos</p>
-              <h3>Primer alcance visual</h3>
-            </div>
-          </div>
-
-          <div class="module-grid">
-            <div v-for="module in modules" :key="module.label" class="module-card">
-              <q-icon :name="module.icon" />
-              <span>{{ module.label }}</span>
-              <strong>{{ module.value }}</strong>
-            </div>
-          </div>
-        </article>
-
-        <article class="panel activity-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Actividad</p>
-              <h3>Registro reciente</h3>
-            </div>
-          </div>
-
-          <div class="activity-list">
-            <div v-for="event in events" :key="event.title" class="activity-item">
-              <q-icon :name="event.icon" />
-              <div>
-                <strong>{{ event.title }}</strong>
-                <span>{{ event.detail }}</span>
-              </div>
-            </div>
-          </div>
-        </article>
-      </section>
-    </div>
+      </div>
+      <div v-else class="empty-state compact">
+        <q-icon name="build" />
+        <strong>Sin alertas registradas</strong>
+        <span>No hay mantenimientos pendientes.</span>
+      </div>
+    </section>
   </q-page>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { getSession, logout } from 'src/services/auth'
+import { computed } from 'vue'
+import KpiCard from 'components/KpiCard.vue'
+import StatusBadge from 'components/StatusBadge.vue'
+import { fuelRecords, maintenance, money, tripExpenses, tripProfit, trips, trucks } from 'src/data/mock'
 
-const router = useRouter()
-const session = getSession()
+const todayLabel = new Intl.DateTimeFormat('es-BO', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(new Date())
 
-const stats = [
-  { label: 'Camiones activos', value: '18', icon: 'local_shipping', tone: 'blue' },
-  { label: 'Viajes programados', value: '7', icon: 'route', tone: 'green' },
-  { label: 'Conductores', value: '24', icon: 'badge', tone: 'amber' },
-  { label: 'Alertas', value: '2', icon: 'warning', tone: 'red' },
-]
+const activeTrips = computed(() => trips.filter((trip) => trip.status === 'En transito').length)
+const totalFreight = computed(() => trips.reduce((sum, trip) => sum + trip.freight, 0))
+const totalExpenses = computed(() => trips.reduce((sum, trip) => sum + tripExpenses(trip), 0))
+const netProfit = computed(() => totalFreight.value - totalExpenses.value)
+const margin = computed(() => {
+  if (!totalFreight.value) return 0
+  return Math.round((netProfit.value / totalFreight.value) * 100)
+})
+const totalLiters = computed(() => fuelRecords.reduce((sum, item) => sum + item.liters, 0))
 
-const trucks = [
-  {
-    plate: '2341-CBB',
-    driver: 'Juan Mamani Condori',
-    route: 'Cochabamba - Santa Cruz',
-    status: 'En ruta',
-    tone: 'moving',
-    color: 'blue-7',
-    progress: 0.72,
-  },
-  {
-    plate: '5678-CBA',
-    driver: 'Maria Flores Herrera',
-    route: 'Base Cercado - Sacaba',
-    status: 'Cargando',
-    tone: 'loading',
-    color: 'amber-7',
-    progress: 0.38,
-  },
-  {
-    plate: '9012-CBN',
-    driver: 'Carlos Quispe Vargas',
-    route: 'Cochabamba - La Paz',
-    status: 'Mantenimiento',
-    tone: 'service',
-    color: 'red-7',
-    progress: 0.16,
-  },
-]
-
-const routePoints = [
-  { city: 'Cercado', style: { left: '8%', top: '58%' } },
-  { city: 'Montero', style: { left: '48%', top: '35%' } },
-  { city: 'Santa Cruz', style: { left: '78%', top: '62%' } },
-]
-
-const modules = [
-  { label: 'Usuarios', value: 'Mock auth', icon: 'manage_accounts' },
-  { label: 'Camiones', value: 'Vista inicial', icon: 'local_shipping' },
-  { label: 'Rutas', value: 'Plan diario', icon: 'alt_route' },
-  { label: 'Reportes', value: 'Pendiente', icon: 'bar_chart' },
-]
-
-const events = [
-  { title: 'CBB-2341 salio a ruta', detail: 'Salida registrada a las 07:30', icon: 'departure_board' },
-  { title: 'Revision preventiva', detail: 'Unidad 9012-CBN en taller', icon: 'build' },
-  { title: 'Conductor aprobado', detail: 'Perfil listo para asignacion', icon: 'verified' },
-]
-
-function closeSession() {
-  logout()
-  router.push('/login')
+function fleetProgress(count) {
+  if (!trucks.length) return 0
+  return count / trucks.length
 }
+
+const fleetState = computed(() => [
+  {
+    label: 'Disponibles',
+    count: trucks.filter((truck) => truck.status === 'Disponible').length,
+    color: 'primary',
+    tone: 'primary',
+  },
+  {
+    label: 'En Transito',
+    count: trucks.filter((truck) => truck.status === 'En transito').length,
+    color: 'primary',
+    tone: 'primary',
+  },
+  {
+    label: 'En Mantenimiento',
+    count: trucks.filter((truck) => truck.status === 'Mantenimiento').length,
+    color: 'amber',
+    tone: 'warning',
+  },
+])
 </script>
 
 <style scoped>
-.dashboard-page {
-  min-height: 100vh;
-  padding: 24px;
-  color: #1f2937;
-  font-family: Inter, Roboto, sans-serif;
-  background:
-    linear-gradient(rgba(248, 250, 252, .96), rgba(248, 250, 252, .96)),
-    url('/img/truck-hero.png') center bottom / cover no-repeat,
-    #f8fafc;
-}
-
-.dashboard-shell {
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-.topbar,
-.operations-hero,
-.panel,
-.summary-card {
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, .94);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 16px;
-}
-
-.brand-lockup,
-.user-actions,
-.hero-actions,
-.panel-heading,
-.truck-title,
-.activity-item {
-  display: flex;
-  align-items: center;
-}
-
-.brand-lockup {
-  gap: 12px;
-}
-
-.brand-badge {
-  width: 44px;
-  height: 44px;
+.page {
   display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: #1d4ed8;
+  gap: 22px;
+}
+
+.hero-card {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 220px;
+  overflow: hidden;
+  padding: 28px;
+  border-radius: 16px;
+  background:
+    linear-gradient(115deg, rgba(15, 23, 42, .94), rgba(30, 58, 138, .82), rgba(30, 41, 59, .32)),
+    url('/img/truck.jpg') center / cover no-repeat,
+    url('/img/truck-hero.png') center / cover no-repeat;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
   color: #fff;
 }
 
-.brand-badge .q-icon {
-  font-size: 25px;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  color: #2563eb;
-  font-size: 10px;
+.hero-copy p {
+  margin: 0 0 8px;
+  color: #93c5fd;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: .12em;
+  letter-spacing: .16em;
   text-transform: uppercase;
 }
 
-h1,
-h2,
-h3,
-p {
+.hero-copy h1 {
   margin: 0;
-}
-
-h1 {
-  color: #0f172a;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 900;
 }
 
-.user-actions {
-  justify-content: flex-end;
-  gap: 12px;
+.hero-copy > span {
+  display: block;
+  margin-top: 8px;
+  color: #bfdbfe;
 }
 
-.user-pill {
+.hero-metrics {
   display: grid;
-  gap: 2px;
-  min-width: 132px;
-  padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #f8fafc;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 28px;
 }
 
-.user-pill span {
-  color: #64748b;
-  font-size: 10px;
+.hero-metrics article {
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .3);
+  backdrop-filter: blur(5px);
+}
+
+.hero-metrics strong,
+.hero-metrics span {
+  display: block;
+}
+
+.hero-metrics strong {
+  font-size: 24px;
+}
+
+.hero-metrics span {
+  color: #dbeafe;
+  font-size: 12px;
+}
+
+.hero-thumb {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: 208px;
+}
+
+.hero-thumb div {
+  height: 128px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.2);
+  background:
+    url('/img/truck.jpg') center / cover no-repeat,
+    url('/img/truck-hero.png') center / cover no-repeat;
+}
+
+.hero-thumb span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255,255,255,.55);
+  font-size: 11px;
+  text-align: right;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.panel {
+  overflow: hidden;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.panel > header,
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #dbeafe;
+  background: #eff6ff;
+}
+
+h2 {
+  margin: 0;
+  color: #1e40af;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.section-header p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.panel-thumb {
+  width: 56px;
+  height: 36px;
+  border-radius: 8px;
+  background:
+    url('/img/truck.jpg') center / cover no-repeat,
+    url('/img/truck-hero.png') center / cover no-repeat;
+}
+
+.finance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 18px;
+}
+
+.finance-grid div {
+  padding: 14px;
+  border-radius: 12px;
+  background: #eff6ff;
+}
+
+.finance-grid .danger {
+  background: #fef2f2;
+}
+
+.finance-grid span,
+.progress-block span {
+  display: block;
+  color: #6b7280;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
-.user-pill strong {
-  color: #111827;
-  font-size: 13px;
-}
-
-.operations-hero {
-  display: grid;
-  grid-template-columns: minmax(0, .92fr) minmax(360px, 1.08fr);
-  gap: 22px;
-  margin-top: 18px;
-  padding: 22px;
-  overflow: hidden;
-}
-
-.hero-copy {
-  align-self: center;
-  padding: 8px 0;
-}
-
-.hero-copy h2 {
-  max-width: 540px;
-  color: #0f172a;
-  font-size: clamp(1.8rem, 3vw, 3rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: 0;
-}
-
-.hero-text {
-  max-width: 540px;
-  margin-top: 14px;
-  color: #475569;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.hero-actions {
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-.primary-action {
-  background: #2563eb;
-  color: #fff;
-}
-
-.secondary-action {
-  color: #1d4ed8;
-}
-
-.hero-visual {
-  position: relative;
-  min-height: 292px;
-  overflow: hidden;
-  border-radius: 8px;
-  background: #0f172a;
-}
-
-.hero-visual img {
-  width: 100%;
-  height: 100%;
-  min-height: 292px;
+.finance-grid strong,
+.progress-block strong {
   display: block;
-  object-fit: cover;
-  object-position: 62% center;
+  margin-top: 6px;
+  color: #1f2937;
+  font-size: 18px;
 }
 
-.tracking-card {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
+.progress-block {
   display: grid;
-  gap: 3px;
-  min-width: 190px;
-  padding: 12px;
-  border: 1px solid rgba(219, 234, 254, .38);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, .76);
-  color: #fff;
-  backdrop-filter: blur(8px);
+  gap: 10px;
+  padding: 0 18px 18px;
 }
 
-.tracking-card span {
-  color: #bfdbfe;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+.progress-block > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.tracking-card strong {
-  font-size: 22px;
-}
-
-.tracking-card p {
-  color: #e0f2fe;
-  font-size: 12px;
-}
-
-.summary-grid {
+.fleet-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 18px;
-}
-
-.summary-card {
-  display: grid;
-  gap: 7px;
-  min-height: 122px;
+  gap: 16px;
   padding: 18px;
 }
 
-.summary-card .q-icon {
-  font-size: 25px;
+.fleet-list > div {
+  display: grid;
+  gap: 8px;
 }
 
-.summary-card span {
-  color: #64748b;
+.fleet-list div div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fleet-list strong {
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.fleet-list em {
+  margin-left: auto;
+  color: #6b7280;
+  font-style: normal;
+  font-size: 12px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #1d4ed8;
+}
+
+.dot.warning {
+  background: #d97706;
+}
+
+.fleet-image {
+  height: 64px;
+  margin: 0 18px 18px;
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(255,255,255,.3), rgba(255,255,255,.3)),
+    url('/img/truck.jpg') center / cover no-repeat,
+    url('/img/truck-hero.png') center / cover no-repeat;
+  opacity: .7;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 180px;
+  padding: 28px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.empty-state.compact {
+  min-height: 140px;
+}
+
+.empty-state .q-icon {
+  color: #94a3b8;
+  font-size: 42px;
+}
+
+.empty-state strong {
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.empty-state span {
+  font-size: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: #eff6ff;
+  color: #1e40af;
   font-size: 11px;
-  font-weight: 900;
+  text-align: left;
   text-transform: uppercase;
 }
 
-.summary-card strong {
-  color: #111827;
-  font-size: 28px;
-  font-weight: 900;
+th,
+td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
 }
 
-.summary-card.blue .q-icon {
-  color: #2563eb;
+tbody tr:hover {
+  background: rgba(239, 246, 255, .6);
 }
 
-.summary-card.green .q-icon {
-  color: #16a34a;
+.alert-panel > header {
+  justify-content: flex-start;
+  background: #fffbeb;
 }
 
-.summary-card.amber .q-icon {
+.alert-panel header .q-icon {
   color: #d97706;
 }
 
-.summary-card.red .q-icon {
-  color: #dc2626;
-}
-
-.workspace-grid,
-.bottom-grid {
-  display: grid;
-  gap: 18px;
-  margin-top: 18px;
-}
-
-.workspace-grid {
-  grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
-}
-
-.bottom-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(340px, .72fr);
-}
-
-.panel {
-  padding: 18px;
-}
-
-.panel-heading {
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.panel-heading h3 {
-  color: #0f172a;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.panel-heading > .q-icon {
-  color: #2563eb;
-  font-size: 28px;
-}
-
-.truck-list {
-  display: grid;
-  gap: 12px;
-}
-
-.truck-row {
-  display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 12px;
-  padding: 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.truck-photo {
-  min-height: 74px;
-  border-radius: 6px;
-  background: url('/img/truck-hero.png') 66% center / cover no-repeat;
-}
-
-.truck-info {
-  display: grid;
-  align-content: center;
-  gap: 7px;
-  min-width: 0;
-}
-
-.truck-title {
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.truck-title strong {
-  color: #0f172a;
-  font-size: 16px;
-}
-
-.truck-info p {
-  color: #475569;
-  font-size: 13px;
-}
-
-.truck-info small {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.status-dot {
-  flex: 0 0 auto;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.status-dot.moving {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.status-dot.loading {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.status-dot.service {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.route-map {
-  position: relative;
-  min-height: 255px;
-  overflow: hidden;
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(22, 163, 74, .1)),
-    repeating-linear-gradient(0deg, transparent 0 42px, rgba(148, 163, 184, .18) 42px 43px),
-    repeating-linear-gradient(90deg, transparent 0 42px, rgba(148, 163, 184, .18) 42px 43px),
-    #f8fafc;
-}
-
-.route-line {
-  position: absolute;
-  left: 14%;
-  right: 15%;
-  top: 53%;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #2563eb, #16a34a, #f59e0b);
-  transform: rotate(-8deg);
-}
-
-.route-point {
-  position: absolute;
-  display: grid;
-  justify-items: center;
-  gap: 7px;
-  transform: translate(-50%, -50%);
-}
-
-.route-point span {
-  width: 18px;
-  height: 18px;
-  display: block;
-  border: 4px solid #fff;
-  border-radius: 999px;
-  background: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, .18);
-}
-
-.route-point strong {
-  padding: 5px 8px;
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-  background: #fff;
-  color: #0f172a;
-  font-size: 11px;
-}
-
-.route-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.route-summary div {
-  display: grid;
-  gap: 4px;
-  padding: 10px;
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.route-summary span {
-  color: #64748b;
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.route-summary strong {
-  color: #0f172a;
-  font-size: 16px;
-}
-
-.module-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.module-card {
-  display: grid;
-  gap: 8px;
-  min-height: 124px;
-  padding: 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.module-card .q-icon {
-  color: #2563eb;
-  font-size: 24px;
-}
-
-.module-card span {
-  color: #475569;
-  font-size: 12px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.module-card strong {
-  color: #0f172a;
-  font-size: 15px;
-}
-
-.activity-list {
+.maintenance-list {
   display: grid;
   gap: 10px;
+  padding: 16px;
 }
 
-.activity-item {
+.maintenance-list article {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
   gap: 12px;
-  padding: 11px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #f8fafc;
 }
 
-.activity-item .q-icon {
-  width: 34px;
-  height: 34px;
+.maintenance-list article > .q-icon {
   display: grid;
   place-items: center;
-  flex: 0 0 34px;
-  border-radius: 8px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #d97706;
 }
 
-.activity-item div {
-  display: grid;
-  gap: 3px;
+.maintenance-list strong,
+.maintenance-list span {
+  display: block;
 }
 
-.activity-item strong {
-  color: #111827;
+.maintenance-list strong {
+  color: #1f2937;
   font-size: 13px;
 }
 
-.activity-item span {
-  color: #64748b;
+.maintenance-list span {
+  color: #6b7280;
   font-size: 12px;
 }
 
-@media (max-width: 960px) {
-  .operations-hero,
-  .workspace-grid,
-  .bottom-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 980px) {
+  .kpi-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .summary-grid,
-  .module-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .hero-thumb {
+    display: none;
   }
 }
 
-@media (max-width: 640px) {
-  .dashboard-page {
-    padding: 14px;
-  }
-
-  .topbar,
-  .user-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .user-actions {
-    width: 100%;
-  }
-
-  .operations-hero {
-    padding: 16px;
-  }
-
-  .hero-visual,
-  .hero-visual img {
-    min-height: 220px;
-  }
-
-  .summary-grid,
-  .module-grid,
-  .route-summary {
+@media (max-width: 680px) {
+  .kpi-grid,
+  .dashboard-grid,
+  .finance-grid,
+  .hero-metrics {
     grid-template-columns: 1fr;
-  }
-
-  .truck-row {
-    grid-template-columns: 1fr;
-  }
-
-  .truck-photo {
-    min-height: 130px;
   }
 }
 </style>
