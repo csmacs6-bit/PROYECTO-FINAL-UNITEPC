@@ -1,0 +1,495 @@
+{
+  "usuarios": [
+    {
+      "name": "fullName",
+      "label": "Nombre completo",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "username",
+      "label": "Usuario",
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "password",
+      "label": "Contraseña",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "role",
+      "label": "Rol",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Usuario",
+        "Administrador",
+        "Operador",
+        "Chofer"
+      ],
+      "default": "Usuario"
+    },
+    {
+      "name": "status",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Activo",
+        "Pendiente",
+        "Inactivo"
+      ],
+      "default": "Activo"
+    }
+  ],
+  "camiones": [
+    {
+      "name": "plate",
+      "label": "Placa",
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "brand",
+      "label": "Marca",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "model",
+      "label": "Modelo",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "year",
+      "label": "Año",
+      "type": "number",
+      "required": true,
+      "min": 1900,
+      "max": 2100
+    },
+    {
+      "name": "vehicleType",
+      "label": "Tipo de vehículo",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "capacity",
+      "label": "Capacidad (toneladas)",
+      "type": "number",
+      "required": true,
+      "min": 0.01
+    },
+    {
+      "name": "gps",
+      "label": "Identificador GPS",
+      "type": "text",
+      "required": false
+    },
+    {
+      "name": "status",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Disponible",
+        "En transito",
+        "Mantenimiento"
+      ],
+      "default": "Disponible"
+    }
+  ],
+  "conductores": [
+    {
+      "name": "name",
+      "label": "Nombre completo",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "identity",
+      "label": "Carnet de identidad",
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "license",
+      "label": "Número de licencia",
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "category",
+      "label": "Categoría de licencia",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "expiresAt",
+      "label": "Vencimiento de licencia",
+      "type": "date",
+      "required": true
+    },
+    {
+      "name": "phone",
+      "label": "Teléfono",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "truck_id",
+      "label": "Camión",
+      "type": "relation",
+      "required": false,
+      "resource": "camiones",
+      "display": "plate"
+    },
+    {
+      "name": "status",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Activo",
+        "Inactivo"
+      ],
+      "default": "Activo"
+    }
+  ],
+  "clientes": [
+    {
+      "name": "name",
+      "label": "Nombre o razón social",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "nit",
+      "label": "NIT",
+      "type": "text",
+      "required": true,
+      "unique": true
+    },
+    {
+      "name": "phone",
+      "label": "Teléfono",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "email",
+      "label": "Correo electrónico",
+      "type": "email",
+      "required": false
+    },
+    {
+      "name": "address",
+      "label": "Dirección",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "contact",
+      "label": "Persona de contacto",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "cargas": [
+    {
+      "name": "description",
+      "label": "Descripción",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "type",
+      "label": "Tipo de carga",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "weight",
+      "label": "Peso (toneladas)",
+      "type": "number",
+      "required": true,
+      "min": 0.01
+    },
+    {
+      "name": "origin",
+      "label": "Origen",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "destination",
+      "label": "Destino",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "client_id",
+      "label": "Cliente",
+      "type": "relation",
+      "required": true,
+      "resource": "clientes",
+      "display": "name"
+    },
+    {
+      "name": "freight",
+      "label": "Flete (Bs)",
+      "type": "number",
+      "required": true,
+      "min": 0
+    },
+    {
+      "name": "departureDate",
+      "label": "Fecha de salida",
+      "type": "date",
+      "required": true
+    },
+    {
+      "name": "arrivalDate",
+      "label": "Fecha de llegada",
+      "type": "date",
+      "required": false,
+      "after": "departureDate"
+    },
+    {
+      "name": "observations",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false
+    },
+    {
+      "name": "status",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Programada",
+        "En transito",
+        "Entregada"
+      ],
+      "default": "Programada"
+    }
+  ],
+  "viajes": [
+    {
+      "name": "description",
+      "label": "Descripción",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "client_id",
+      "label": "Cliente",
+      "type": "relation",
+      "required": true,
+      "resource": "clientes",
+      "display": "name"
+    },
+    {
+      "name": "cargo_id",
+      "label": "Carga",
+      "type": "relation",
+      "required": true,
+      "resource": "cargas",
+      "display": "description"
+    },
+    {
+      "name": "truck_id",
+      "label": "Camión",
+      "type": "relation",
+      "required": true,
+      "resource": "camiones",
+      "display": "plate"
+    },
+    {
+      "name": "driver_id",
+      "label": "Conductor",
+      "type": "relation",
+      "required": true,
+      "resource": "conductores",
+      "display": "name"
+    },
+    {
+      "name": "origin",
+      "label": "Origen",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "destination",
+      "label": "Destino",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "date",
+      "label": "Fecha",
+      "type": "date",
+      "required": true
+    },
+    {
+      "name": "arrivalDate",
+      "label": "Fecha de llegada",
+      "type": "date",
+      "required": false,
+      "after": "date"
+    },
+    {
+      "name": "freight",
+      "label": "Flete (Bs)",
+      "type": "number",
+      "required": true,
+      "min": 0
+    },
+    {
+      "name": "status",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Programado",
+        "En transito",
+        "Completado",
+        "Cancelado"
+      ],
+      "default": "Programado"
+    }
+  ],
+  "combustible": [
+    {
+      "name": "date",
+      "label": "Fecha",
+      "type": "date",
+      "required": true
+    },
+    {
+      "name": "truck_id",
+      "label": "Camión",
+      "type": "relation",
+      "required": true,
+      "resource": "camiones",
+      "display": "plate"
+    },
+    {
+      "name": "trip_id",
+      "label": "Viaje",
+      "type": "relation",
+      "required": false,
+      "resource": "viajes",
+      "display": "description"
+    },
+    {
+      "name": "liters",
+      "label": "Litros",
+      "type": "number",
+      "required": true,
+      "min": 0.01
+    },
+    {
+      "name": "price",
+      "label": "Precio por litro (Bs)",
+      "type": "number",
+      "required": true,
+      "min": 0.01
+    },
+    {
+      "name": "odometer",
+      "label": "Kilometraje",
+      "type": "number",
+      "required": true,
+      "min": 0,
+      "integer": true
+    },
+    {
+      "name": "location",
+      "label": "Estación o ubicación",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "mantenimiento": [
+    {
+      "name": "truck_id",
+      "label": "Camión",
+      "type": "relation",
+      "required": true,
+      "resource": "camiones",
+      "display": "plate"
+    },
+    {
+      "name": "description",
+      "label": "Descripción",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "type",
+      "label": "Tipo",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Preventivo",
+        "Correctivo"
+      ],
+      "default": "Preventivo"
+    },
+    {
+      "name": "date",
+      "label": "Fecha",
+      "type": "date",
+      "required": true
+    },
+    {
+      "name": "odometer",
+      "label": "Kilometraje",
+      "type": "number",
+      "required": true,
+      "min": 0,
+      "integer": true
+    },
+    {
+      "name": "cost",
+      "label": "Costo (Bs)",
+      "type": "number",
+      "required": true,
+      "min": 0
+    },
+    {
+      "name": "workshop",
+      "label": "Taller",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "nextDate",
+      "label": "Próxima fecha",
+      "type": "date",
+      "required": false,
+      "after": "date"
+    },
+    {
+      "name": "status",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Programado",
+        "En proceso",
+        "Realizado"
+      ],
+      "default": "Programado"
+    }
+  ]
+}

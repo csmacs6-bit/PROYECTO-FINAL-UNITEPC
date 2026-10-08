@@ -62,6 +62,7 @@
                 label="Ingresar al sistema"
                 class="submit-btn"
                 type="submit"
+                :loading="saving"
               />
             </q-form>
           </q-card-section>
@@ -86,6 +87,7 @@ const route = useRoute()
 
 const showPassword = ref(false)
 const submitted = ref(false)
+const saving = ref(false)
 const errorMessage = ref('')
 
 const form = reactive({
@@ -93,7 +95,8 @@ const form = reactive({
   password: '',
 })
 
-function submitLogin() {
+async function submitLogin() {
+  if (saving.value) return
   submitted.value = true
   errorMessage.value = ''
 
@@ -102,7 +105,9 @@ function submitLogin() {
     return
   }
 
-  const result = login(form.username, form.password)
+  saving.value = true
+  const result = await login(form.username, form.password)
+  saving.value = false
 
   if (!result.ok) {
     errorMessage.value = result.message

@@ -53,7 +53,7 @@
                 :options="roleOptions"
                 class="tm-input"
                 :error="submitted && !form.role"
-                error-message="Selecciona administrador, usuario o chofer."
+                error-message="Selecciona usuario o chofer."
               >
                 <template #prepend>
                   <q-icon name="admin_panel_settings" />
@@ -119,6 +119,7 @@
                 label="Crear mi cuenta"
                 class="submit-btn"
                 type="submit"
+                :loading="saving"
               />
             </q-form>
 
@@ -141,6 +142,7 @@ const $q = useQuasar()
 const showPassword = ref(false)
 const showConfirm = ref(false)
 const submitted = ref(false)
+const saving = ref(false)
 const errorMessage = ref('')
 
 const form = reactive({
@@ -152,7 +154,6 @@ const form = reactive({
 })
 
 const roleOptions = [
-  'Administrador',
   'Usuario',
   'Chofer',
 ]
@@ -167,7 +168,8 @@ const isValidForm = computed(() => (
   passwordsMatch.value
 ))
 
-function submitRegister() {
+async function submitRegister() {
+  if (saving.value) return
   submitted.value = true
   errorMessage.value = ''
 
@@ -176,7 +178,9 @@ function submitRegister() {
     return
   }
 
-  const result = registerUser(form)
+  saving.value = true
+  const result = await registerUser(form)
+  saving.value = false
 
   if (!result.ok) {
     errorMessage.value = result.message

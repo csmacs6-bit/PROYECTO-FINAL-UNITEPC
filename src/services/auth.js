@@ -1,111 +1,24 @@
+﻿import { api } from './api'
 const STORAGE_KEY = 'tm_auth_session'
-const USERS_KEY = 'tm_registered_users'
-
-export const demoUsers = [
-  {
-    fullName: 'Administrador',
-    username: 'admin',
-    password: 'admin123',
-    role: 'Administrador',
-    status: 'Activo',
-  },
-  {
-    fullName: 'Operador',
-    username: 'operador',
-    password: 'op2026',
-    role: 'Operador',
-    status: 'Activo',
-  },
-  {
-    fullName: 'Chofer',
-    username: 'chofer',
-    password: 'chofer123',
-    role: 'Chofer',
-    status: 'Activo',
-  },
-]
-
-export function getRegisteredUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) || []
-  } catch {
-    return []
-  }
-}
-
-export function getUsers() {
-  return [...demoUsers, ...getRegisteredUsers()]
-}
-
 export function getSession() {
+  try { const session = JSON.parse(localStorage.getItem(STORAGE_KEY)); return session?.token ? session : null } catch { return null }
+}
+export async function login(username, password) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY))
-  } catch {
-    return null
-  }
+    const result = await api('/login', { method: 'POST', body: { username, password } })
+    const session = { ...result.user, token: result.token, loggedAt: new Date().toISOString() }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+    return { ok: true, user: session }
+  } catch (error) { return { ok: false, message: Object.values(error.errors || {}).flat()[0] || error.message } }
 }
-
-export function login(username, password) {
-  const normalizedUsername = username.trim().toLowerCase()
-  const user = getUsers().find((item) => (
-    item.username.toLowerCase() === normalizedUsername &&
-    item.password === password
-  ))
-
-  if (!user) {
-    return {
-      ok: false,
-      message: 'Usuario o contrasena incorrectos.',
-    }
-  }
-
-  const session = {
-    fullName: user.fullName,
-    username: user.username,
-    role: user.role,
-    driver: user.driver || null,
-    loggedAt: new Date().toISOString(),
-  }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-
-  return {
-    ok: true,
-    user: session,
-  }
+export async function registerUser(payload) {
+  try {
+    const result = await api('/register', { method: 'POST', body: { ...payload, password_confirmation: payload.passwordConfirm } })
+    return { ok: true, user: result.data }
+  } catch (error) { return { ok: false, message: Object.values(error.errors || {}).flat()[0] || error.message } }
 }
-
-export function registerUser(payload) {
-  const username = payload.username.trim().toLowerCase()
-  const userExists = getUsers().some((user) => user.username.toLowerCase() === username)
-
-  if (userExists) {
-    return {
-      ok: false,
-      message: 'El nombre de usuario ya esta registrado.',
-    }
-  }
-
-  const newUser = {
-    fullName: payload.fullName.trim(),
-    username,
-    password: payload.password,
-    role: payload.role || 'Usuario',
-    status: 'Pendiente',
-    driver: null,
-    registeredAt: new Date().toISOString(),
-  }
-
-  const users = getRegisteredUsers()
-  users.push(newUser)
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-
-  return {
-    ok: true,
-    user: newUser,
-  }
-}
-
 export function logout() {
+  const request = api('/logout', { method: 'POST' })
   localStorage.removeItem(STORAGE_KEY)
+  request.catch(() => {})
 }

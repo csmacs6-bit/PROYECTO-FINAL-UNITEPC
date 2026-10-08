@@ -10,6 +10,7 @@ module.exports = configure(() => ({
   },
   devServer: {
     open: true,
+    proxy: { '/api': { target: 'http://localhost/transportes', changeOrigin: true } },
   },
   framework: {
     config: {},

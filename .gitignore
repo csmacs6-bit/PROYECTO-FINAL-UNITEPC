@@ -1,0 +1,11 @@
+/node_modules/
+/.quasar/
+/dist/
+/backend/vendor/
+/backend/.env
+/backend/database/*.sqlite*
+/backend/storage/logs/*
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/scripts/httpd-vhosts.before-transportes.conf

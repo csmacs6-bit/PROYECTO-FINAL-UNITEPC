@@ -14,8 +14,17 @@
         color="primary"
         icon="add"
         :label="module.action"
+        :disable="loading || !!loadError"
+        @click="registrationOpen = true"
       />
     </header>
+
+    <q-linear-progress v-if="loading" indeterminate color="primary" />
+    <q-banner v-if="loadError" class="bg-red-1 text-negative" role="alert">
+      {{ loadError }}
+      <template #action><q-btn flat label="Reintentar" @click="load" /></template>
+    </q-banner>
+    <registration-dialog v-if="module.action" v-model="registrationOpen" :module-key="key" :title="module.action" />
 
     <q-banner v-if="module.alert" rounded class="alert-banner">
       <q-icon name="warning" />
@@ -125,11 +134,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import KpiCard from 'components/KpiCard.vue'
 import StatusBadge from 'components/StatusBadge.vue'
-import { modules } from 'src/data/modules'
+import { createModules } from 'src/data/modules'
+import RegistrationDialog from 'components/RegistrationDialog.vue'
+import { loadRecords, moduleData } from 'src/services/registrations'
 import { getSession } from 'src/services/auth'
 
 const props = defineProps({
@@ -141,8 +152,23 @@ const props = defineProps({
 
 const route = useRoute()
 const session = getSession()
-const module = computed(() => modules[props.moduleKey || route.meta.moduleKey] || modules.viajes)
+const key = computed(() => props.moduleKey || route.meta.moduleKey || 'viajes')
+const module = computed(() => createModules(moduleData())[key.value])
 const isDriver = computed(() => session?.role === 'Chofer')
+const registrationOpen = ref(false)
+const loading = ref(false)
+const loadError = ref('')
+let loadVersion = 0
+async function load() {
+  if (isDriver.value) return
+  const version = ++loadVersion
+  loading.value = true
+  loadError.value = ''
+  try { await loadRecords(key.value) } catch (error) {
+    if (version === loadVersion) loadError.value = error.message
+  } finally { if (version === loadVersion) loading.value = false }
+}
+watch(key, () => { registrationOpen.value = false; load() }, { immediate: true })
 </script>
 
 <style scoped>

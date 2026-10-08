@@ -1,4 +1,8 @@
 # PROYECTO-FINAL-UNITEPC
+
+La primera etapa de registros con Laravel está implementada. Consulta [REGISTROS.md](REGISTROS.md) para iniciar el backend y el frontend, crear el administrador y configurar la base de datos.
+
+Para la configuración actual con Apache y MySQL de XAMPP, sigue [XAMPP.md](XAMPP.md).
 # Sistema de Gestión para Empresa de Transporte de Carga Pesada
 
 ## Descripción del proyecto
