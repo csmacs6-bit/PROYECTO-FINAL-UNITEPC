@@ -23,7 +23,7 @@ class RegistrationController extends Controller
         abort_if($module === 'usuarios' && $request->attributes->get('transportUser')->role !== 'Administrador', 403, 'Solo el administrador puede gestionar usuarios.');
     }
 
-    private function validateData(Request $request, string $module): array
+    private function validateData(Request $request, string $module, ?int $id = null): array
     {
         if ($module === 'usuarios') {
             $request->merge(['username' => mb_strtolower(trim((string) $request->input('username')))]);
@@ -36,7 +36,7 @@ class RegistrationController extends Controller
         foreach ($this->fields($module) as $field) {
             $name = $field['name'];
             $labels[$name] = $field['label'];
-            $rules[$name] = [$field['required'] ? 'required' : 'nullable'];
+            $rules[$name] = [($field['required'] && !($id && $name === 'password')) ? 'required' : 'nullable'];
             switch ($field['type']) {
                 case 'number':
                     $rules[$name][] = ($field['integer'] ?? false) || $name === 'year' ? 'integer' : 'numeric';
@@ -63,7 +63,7 @@ class RegistrationController extends Controller
                         $rules[$name][] = 'confirmed';
                     }
             }
-            if ($field['unique'] ?? false) $rules[$name][] = Rule::unique($module, $name);
+            if ($field['unique'] ?? false) $rules[$name][] = Rule::unique($module, $name)->ignore($id);
         }
         return Validator::make($request->all(), $rules, [
             'required' => 'El campo :attribute es obligatorio.',
@@ -108,6 +108,58 @@ class RegistrationController extends Controller
             abort_unless($cargo->client_id == $data['client_id'], 422, 'La carga seleccionada pertenece a otro cliente.');
         }
         return response()->json(['message' => 'Registro guardado correctamente.', 'data' => $this->insert($module, $data)], 201);
+    }
+
+    public function update(Request $request, string $module, int $id)
+    {
+        $this->authorizeModule($request, $module);
+        abort_unless(DB::table($module)->find($id), 404, 'El registro ya no existe.');
+        return DB::transaction(function () use ($request, $module, $id) {
+            $data = $this->validateData($request, $module, $id);
+            $this->protectOwnAccount($request, $module, $id, $data);
+            if ($module === 'viajes') {
+                $cargo = DB::table('cargas')->find($data['cargo_id']);
+                abort_unless($cargo->client_id == $data['client_id'], 422, 'La carga seleccionada pertenece a otro cliente.');
+            }
+            if ($module === 'cargas') {
+                abort_if(DB::table('viajes')->where('cargo_id', $id)->where('client_id', '!=', $data['client_id'])->exists(), 422, 'Esta carga tiene viajes asociados a su cliente actual.');
+            }
+            if (!empty($data['password'])) $data['password'] = Hash::make($data['password']);
+            else unset($data['password']);
+            $data['updated_at'] = now();
+            DB::table($module)->where('id', $id)->update($data);
+            return response()->json(['data' => $this->safe(DB::table($module)->find($id)), 'message' => 'Registro actualizado correctamente.']);
+        });
+    }
+
+    private function protectOwnAccount(Request $request, string $module, int $id, array $data): void
+    {
+        if ($module !== 'usuarios' || $request->attributes->get('transportUser')->id != $id) return;
+        abort_if(($data['role'] ?? '') !== 'Administrador' || ($data['status'] ?? '') !== 'Activo', 422, 'No puedes eliminar, desactivar ni quitar el rol de administrador de tu propia cuenta.');
+    }
+
+    public function destroy(Request $request, string $module, int $id)
+    {
+        $this->authorizeModule($request, $module);
+        return DB::transaction(function () use ($request, $module, $id) {
+            abort_unless(DB::table($module)->find($id), 404, 'El registro ya no existe.');
+            $this->protectOwnAccount($request, $module, $id, []);
+            $schema = json_decode(file_get_contents(base_path('../shared/registrations.json')), true, 512, JSON_THROW_ON_ERROR);
+            foreach ($schema as $related => $fields) {
+                foreach ($fields as $field) {
+                    if (($field['resource'] ?? null) === $module) {
+                        abort_if(DB::table($related)->where($field['name'], $id)->exists(), 409, 'No puedes eliminar este registro porque tiene registros relacionados en '.$related.'.');
+                    }
+                }
+            }
+            try {
+                DB::table($module)->where('id', $id)->delete();
+            } catch (\Illuminate\Database\QueryException $error) {
+                if (in_array((string) $error->getCode(), ['23000', '23503'])) abort(409, 'No puedes eliminar este registro porque tiene registros relacionados.');
+                throw $error;
+            }
+            return response()->noContent();
+        });
     }
 
     public function register(Request $request)

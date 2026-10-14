@@ -30,3 +30,20 @@ export function moduleData() {
     users: records.usuarios.map((row) => ({ ...row, registeredAt: row.created_at?.slice(0, 10) })),
   }
 }
+
+export async function updateRecord(key, id, payload) {
+  const result = await api('/' + key + '/' + id, { method: 'PUT', body: payload })
+  const index = records[key].findIndex(row => row.id === id)
+  if (index !== -1) records[key].splice(index, 1, result.data)
+  if (key === 'usuarios') {
+    const session = JSON.parse(localStorage.getItem('tm_auth_session') || 'null')
+    if (session?.id === id) localStorage.setItem('tm_auth_session', JSON.stringify({ ...session, ...result.data }))
+  }
+  return result.data
+}
+
+export async function deleteRecord(key, id) {
+  await api('/' + key + '/' + id, { method: 'DELETE' })
+  const index = records[key].findIndex(row => row.id === id)
+  if (index !== -1) records[key].splice(index, 1)
+}

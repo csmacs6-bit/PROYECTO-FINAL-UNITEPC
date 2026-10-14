@@ -15,7 +15,7 @@
         icon="add"
         :label="module.action"
         :disable="loading || !!loadError"
-        @click="registrationOpen = true"
+        @click="openCreate"
       />
     </header>
 
@@ -24,7 +24,7 @@
       {{ loadError }}
       <template #action><q-btn flat label="Reintentar" @click="load" /></template>
     </q-banner>
-    <registration-dialog v-if="module.action" v-model="registrationOpen" :module-key="key" :title="module.action" />
+    <registration-dialog v-if="module.action || module.map" v-model="registrationOpen" :module-key="resourceKey" :title="editingRecord ? 'Editar registro' : module.action" :record="editingRecord" />
 
     <q-banner v-if="module.alert" rounded class="alert-banner">
       <q-icon name="warning" />
@@ -44,10 +44,13 @@
     <section v-if="module.filters" class="filter-card">
       <q-input
         v-for="filter in module.filters"
+        v-model="filters[filter]"
+        clearable
         :key="filter"
         outlined
         dense
         :label="filter"
+        :type="filter === 'Mes' ? 'month' : 'text'"
       >
         <template #prepend>
           <q-icon name="search" />
@@ -71,8 +74,8 @@
           </div>
 
           <div v-if="!isDriver" class="actions">
-            <q-btn flat round dense icon="edit" />
-            <q-btn flat round dense icon="delete" class="delete-btn" />
+            <q-btn flat round dense icon="edit" aria-label="Editar registro" :disable="loading || deleting" @click="openEdit(item.id)" />
+            <q-btn flat round dense icon="delete" class="delete-btn" aria-label="Eliminar registro" :disable="loading || deleting" @click="confirmDelete(item.id)" />
           </div>
         </div>
 
@@ -117,8 +120,8 @@
                 <span v-else>{{ cell }}</span>
               </td>
               <td v-if="!isDriver" class="table-actions">
-                <q-btn flat round dense icon="edit" />
-                <q-btn flat round dense icon="delete" class="delete-btn" />
+                <q-btn flat round dense icon="edit" aria-label="Editar registro" :disable="loading || deleting" @click="openEdit(tableIds[rowIndex])" />
+                <q-btn flat round dense icon="delete" class="delete-btn" aria-label="Eliminar registro" :disable="loading || deleting" @click="confirmDelete(tableIds[rowIndex])" />
               </td>
             </tr>
           </tbody>
@@ -134,13 +137,14 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { useRoute } from 'vue-router'
 import KpiCard from 'components/KpiCard.vue'
 import StatusBadge from 'components/StatusBadge.vue'
 import { createModules } from 'src/data/modules'
 import RegistrationDialog from 'components/RegistrationDialog.vue'
-import { loadRecords, moduleData } from 'src/services/registrations'
+import { loadRecords, moduleData, records, deleteRecord } from 'src/services/registrations'
 import { getSession } from 'src/services/auth'
 
 const props = defineProps({
@@ -153,7 +157,45 @@ const props = defineProps({
 const route = useRoute()
 const session = getSession()
 const key = computed(() => props.moduleKey || route.meta.moduleKey || 'viajes')
-const module = computed(() => createModules(moduleData())[key.value])
+const filters = reactive({})
+const module = computed(() => {
+  const result = createModules(moduleData())[key.value]
+  if (result.filters) result.cards = result.cards.filter(item => result.filters.every(filter => {
+    const value = String(filters[filter] || '').trim().toLocaleLowerCase()
+    if (!value) return true
+    if (filter === 'Buscar viaje') return [item.title, item.subtitle, item.id].join(' ').toLocaleLowerCase().includes(value)
+    if (filter === 'Estado') return item.status.toLocaleLowerCase().includes(value)
+    const label = filter === 'Mes' ? 'Fecha' : filter
+    const content = String(item.meta.find(entry => entry[0] === label)?.[1] || '')
+    return content.toLocaleLowerCase().includes(value)
+  }))
+  return result
+})
+const tableIds = computed(() => (records[key.value] || []).map(row => row.id))
+const editingRecord = ref(null)
+const deleting = ref(false)
+const $q = useQuasar()
+const resourceKey = computed(() => key.value === 'gps' ? 'camiones' : key.value)
+function openCreate() {
+  editingRecord.value = null
+  registrationOpen.value = true
+}
+function openEdit(id) {
+  editingRecord.value = records[resourceKey.value].find(row => row.id === id)
+  if (editingRecord.value) registrationOpen.value = true
+}
+function confirmDelete(id) {
+  const resource = resourceKey.value
+  $q.dialog({ title: 'Eliminar registro', message: '¿Quieres eliminar este registro? Esta acción no se puede deshacer.', cancel: { label: 'Cancelar', flat: true }, ok: { label: 'Eliminar', color: 'negative' }, persistent: true }).onOk(async () => {
+    if (deleting.value) return
+    deleting.value = true
+    try {
+      await deleteRecord(resource, id)
+      $q.notify({ type: 'positive', message: 'Registro eliminado correctamente.' })
+    } catch (error) { $q.notify({ type: 'negative', message: error.message }) }
+    finally { deleting.value = false }
+  })
+}
 const isDriver = computed(() => session?.role === 'Chofer')
 const registrationOpen = ref(false)
 const loading = ref(false)
@@ -168,7 +210,7 @@ async function load() {
     if (version === loadVersion) loadError.value = error.message
   } finally { if (version === loadVersion) loading.value = false }
 }
-watch(key, () => { registrationOpen.value = false; load() }, { immediate: true })
+watch(key, () => { registrationOpen.value = false; editingRecord.value = null; for (const name of Object.keys(filters)) delete filters[name]; load() }, { immediate: true })
 </script>
 
 <style scoped>

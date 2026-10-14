@@ -14,6 +14,6 @@ module.exports = configure(() => ({
   },
   framework: {
     config: {},
-    plugins: ['Notify'],
+    plugins: ['Notify', 'Dialog'],
   },
 }))

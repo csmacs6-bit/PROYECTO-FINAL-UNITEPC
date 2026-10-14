@@ -11,6 +11,12 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+    }
+
     private function administrator(): string
     {
         DB::table('usuarios')->insert(['fullName' => 'Admin', 'username' => 'admin', 'password' => Hash::make('secure123'), 'role' => 'Administrador', 'status' => 'Activo', 'created_at' => now(), 'updated_at' => now()]);
@@ -36,6 +42,11 @@ class RegistrationTest extends TestCase
             $this->assertDatabaseHas($module, ['id' => $id]);
             $this->getJson('/api/'.$module)->assertOk()->assertJsonFragment(['id' => $id]);
         }
+        foreach ($fixtures as $module => $payload) {
+            if ($module === 'usuarios') unset($payload['password'], $payload['password_confirmation']);
+            $id = $module === 'usuarios' ? 2 : 1;
+            $this->putJson('/api/'.$module.'/'.$id, $payload)->assertOk()->assertJsonPath('data.id', $id)->assertJsonMissingPath('data.password');
+        }
         $this->assertDatabaseHas('camiones', ['plate' => 'ABC-123']);
         $this->assertTrue(Hash::check('secure123', DB::table('usuarios')->where('username', 'operador')->value('password')));
         $this->postJson('/api/camiones', $fixtures['camiones'])->assertUnprocessable()->assertJsonValidationErrors('plate');
@@ -43,6 +54,16 @@ class RegistrationTest extends TestCase
         $this->postJson('/api/cargas', [...$fixtures['cargas'], 'arrivalDate' => '2026-10-01'])->assertUnprocessable()->assertJsonValidationErrors('arrivalDate');
         $this->postJson('/api/combustible', [...$fixtures['combustible'], 'liters' => -1])->assertUnprocessable()->assertJsonValidationErrors('liters');
         $this->postJson('/api/clientes', [...$fixtures['clientes'], 'nit' => '999', 'email' => 'invalid'])->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->deleteJson('/api/clientes/1')->assertConflict();
+        $this->deleteJson('/api/usuarios/1')->assertUnprocessable();
+        $this->putJson('/api/usuarios/1', ['fullName' => 'Admin', 'username' => 'admin', 'role' => 'Usuario', 'status' => 'Activo'])->assertUnprocessable();
+        $this->putJson('/api/camiones/999', $fixtures['camiones'])->assertNotFound();
+        $this->deleteJson('/api/camiones/999')->assertNotFound();
+        foreach (array_reverse(array_keys($fixtures)) as $module) {
+            $id = $module === 'usuarios' ? 2 : 1;
+            $this->deleteJson('/api/'.$module.'/'.$id)->assertNoContent();
+            $this->assertDatabaseMissing($module, ['id' => $id]);
+        }
         $this->getJson('/api/not-a-module')->assertNotFound();
         $this->postJson('/api/logout')->assertNoContent();
         $this->getJson('/api/camiones')->assertUnauthorized();
@@ -59,6 +80,8 @@ class RegistrationTest extends TestCase
         $token = $this->postJson('/api/login', ['username' => 'nuevo', 'password' => 'secure123'])->assertOk()->json('token');
         $this->withToken($token)->getJson('/api/usuarios')->assertForbidden();
         $this->postJson('/api/usuarios', $payload)->assertForbidden();
+        $this->putJson('/api/usuarios/1', $payload)->assertForbidden();
+        $this->deleteJson('/api/usuarios/1')->assertForbidden();
         DB::table('access_tokens')->update(['expires_at' => now()->subMinute()]);
         $this->getJson('/api/clientes')->assertUnauthorized();
     }
@@ -68,6 +91,8 @@ class RegistrationTest extends TestCase
         $this->postJson('/api/register', ['fullName' => 'Chofer', 'username' => 'chofer', 'password' => 'secure123', 'password_confirmation' => 'secure123', 'role' => 'Chofer'])->assertCreated();
         $token = $this->postJson('/api/login', ['username' => 'chofer', 'password' => 'secure123'])->assertOk()->json('token');
         $this->withToken($token)->postJson('/api/camiones', [])->assertForbidden();
+        $this->putJson('/api/camiones/1', [])->assertForbidden();
+        $this->deleteJson('/api/camiones/1')->assertForbidden();
         DB::table('usuarios')->update(['status' => 'Inactivo']);
         $this->postJson('/api/login', ['username' => 'chofer', 'password' => 'secure123'])->assertUnprocessable();
     }
