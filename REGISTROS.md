@@ -25,6 +25,7 @@ php artisan serve --host=127.0.0.1 --port=8000
 En una segunda terminal, desde la carpeta del proyecto:
 
 ```powershell
+cd front
 npm install
 npm run dev
 ```
@@ -59,8 +60,9 @@ Las relaciones se validan con claves foráneas. Una carga de un viaje debe perte
 ## Comprobaciones
 
 ```powershell
+cd front
 npm run build
-cd backend
+cd ../backend
 php artisan test
 ```
 

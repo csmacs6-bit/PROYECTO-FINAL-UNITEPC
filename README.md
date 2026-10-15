@@ -1,3 +1,11 @@
+# Organización del código
+
+- **front/**: interfaz y avances del frontend. Consulta [front/README.md](front/README.md).
+- **backend/**: servidor Laravel.
+- **shared/**: definición de formularios compartida por ambas partes.
+
+Para iniciar la interfaz: `cd front`, `npm install` y `npm run dev`.
+
 # PROYECTO-FINAL-UNITEPC
 
 La primera etapa de registros con Laravel está implementada. Consulta [REGISTROS.md](REGISTROS.md) para iniciar el backend y el frontend, crear el administrador y configurar la base de datos.

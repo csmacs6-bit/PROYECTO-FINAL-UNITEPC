@@ -1,6 +1,9 @@
 /node_modules/
 /.quasar/
 /dist/
+/front/node_modules/
+/front/.quasar/
+/front/dist/
 /backend/vendor/
 /backend/.env
 /backend/database/*.sqlite*

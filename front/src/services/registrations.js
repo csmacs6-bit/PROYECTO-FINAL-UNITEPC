@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import schema from '../../shared/registrations.json'
+import schema from '../../../shared/registrations.json'
 import { api } from './api'
 
 export { schema }

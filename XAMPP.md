@@ -23,6 +23,8 @@ php artisan transport:admin
 4. En una segunda terminal, desde la carpeta principal:
 
 ```powershell
+cd front
+npm install
 npm run dev
 ```
 
@@ -30,7 +32,7 @@ Abre la dirección que muestra Quasar e inicia sesión. Reinicia Quasar si ya es
 
 ## En las siguientes sesiones
 
-Inicia **Apache** y **MySQL** en XAMPP y ejecuta `npm run dev` desde la carpeta principal. No hace falta `php artisan serve`.
+Inicia **Apache** y **MySQL** en XAMPP y ejecuta `npm run dev` desde la carpeta front. No hace falta `php artisan serve`.
 
 ## Verificar
 
