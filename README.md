@@ -1,10 +1,10 @@
 # Organización del código
 
-- **front/**: interfaz y avances del frontend. Consulta [front/README.md](front/README.md).
+- **frontend/**: interfaz y avances del frontend. Consulta [frontend/README.md](frontend/README.md).
 - **backend/**: servidor Laravel.
 - **shared/**: definición de formularios compartida por ambas partes.
 
-Para iniciar la interfaz: `cd front`, `npm install` y `npm run dev`.
+Para iniciar la interfaz: `cd frontend`, `npm install` y `npm run dev`.
 
 # PROYECTO-FINAL-UNITEPC
 

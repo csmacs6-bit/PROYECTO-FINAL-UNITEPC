@@ -7,12 +7,12 @@ Esta carpeta contiene los avances de la interfaz: inicio de sesión, paneles, ca
 Desde la raíz del repositorio:
 
 ```powershell
-cd front
+cd frontend
 npm install
 npm run dev
 ```
 
-Para compilar: `npm run build`. El resultado se genera en `front/dist/spa`.
+Para compilar: `npm run build`. El resultado se genera en `frontend/dist/spa`.
 
 El código Vue está en `src`, las imágenes en `public` y la configuración en `quasar.config.js`. `resources` y `routes` conservan las vistas y rutas de la primera interfaz Laravel.
 
