@@ -47,6 +47,16 @@ class RegistrationTest extends TestCase
             $id = $module === 'usuarios' ? 2 : 1;
             $this->putJson('/api/'.$module.'/'.$id, $payload)->assertOk()->assertJsonPath('data.id', $id)->assertJsonMissingPath('data.password');
         }
+        $this->putJson('/api/fletes/1/cobro', ['paymentStatus' => 'Cobrado', 'paidAt' => '2026-10-10'])->assertUnprocessable();
+        $this->putJson('/api/cargas/1', [...$fixtures['cargas'], 'status' => 'Entregada'])->assertOk()->assertJsonPath('data.paymentStatus', 'Pendiente');
+        $this->putJson('/api/fletes/1/cobro', ['paymentStatus' => 'Cobrado'])->assertUnprocessable()->assertJsonValidationErrors('paidAt');
+        $this->putJson('/api/fletes/1/cobro', ['paymentStatus' => 'Otro'])->assertUnprocessable();
+        $this->putJson('/api/fletes/999/cobro', ['paymentStatus' => 'Pendiente'])->assertNotFound();
+        $this->putJson('/api/fletes/1/cobro', ['paymentStatus' => 'Cobrado', 'paidAt' => '2026-10-10'])->assertOk()->assertJsonPath('data.paymentStatus', 'Cobrado');
+        $this->getJson('/api/cargas')->assertOk()->assertJsonFragment(['paymentStatus' => 'Cobrado', 'paidAt' => '2026-10-10']);
+        $this->putJson('/api/cargas/1', [...$fixtures['cargas'], 'status' => 'Entregada'])->assertOk()->assertJsonPath('data.paymentStatus', 'Cobrado');
+        $this->putJson('/api/fletes/1/cobro', ['paymentStatus' => 'Pendiente'])->assertOk()->assertJsonPath('data.paidAt', null);
+        $this->assertDatabaseHas('cargas', ['id' => 1, 'paymentStatus' => 'Pendiente', 'paidAt' => null]);
         $this->assertDatabaseHas('camiones', ['plate' => 'ABC-123']);
         $this->assertTrue(Hash::check('secure123', DB::table('usuarios')->where('username', 'operador')->value('password')));
         $this->postJson('/api/camiones', $fixtures['camiones'])->assertUnprocessable()->assertJsonValidationErrors('plate');

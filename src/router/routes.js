@@ -69,6 +69,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'fletes',
+        name: 'fletes',
+        component: () => import('pages/FletesPage.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'combustible',
         name: 'combustible',
         component: () => import('pages/CombustiblePage.vue'),

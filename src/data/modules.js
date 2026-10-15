@@ -169,8 +169,7 @@ export function createModules(data = {}) {
         status: truck.status,
         meta: [
           ['Conductor', truck.driver],
-          ['Coordenadas', truck.gps],
-          ['Actualizado', 'Hace 5 min'],
+          ['Identificador GPS', truck.gps],
         ],
       })),
     },

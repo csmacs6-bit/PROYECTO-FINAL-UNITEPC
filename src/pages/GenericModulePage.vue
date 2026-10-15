@@ -59,9 +59,20 @@
     </section>
 
     <section v-if="module.map" class="map-panel">
-      <q-icon name="map" />
-      <strong>Mapa GPS - integracion pendiente</strong>
-      <span>Panel preparado para integrar mapas reales en una fase posterior.</span>
+      <q-icon name="location_on" />
+      <strong>Seguimiento GPS en Protrack</strong>
+      <span>Abre Protrack e inicia sesión con tu cuenta para consultar la ubicación de tus camiones.</span>
+      <q-btn
+        unelevated
+        no-caps
+        color="primary"
+        icon="open_in_new"
+        label="Abrir GPS en Protrack"
+        href="https://www.protrack365.com/V2/index.jsp#/"
+        target="_blank"
+        rel="noopener noreferrer"
+      />
+      <span>La ubicación en vivo se consulta en Protrack.</span>
     </section>
 
     <section v-if="module.cards" class="cards-grid">
@@ -92,6 +103,18 @@
             <strong>{{ entry[1] }}</strong>
           </div>
         </div>
+        <q-btn
+          v-if="key === 'viajes' && !isDriver && ['Programado', 'En transito'].includes(item.status)"
+          outline
+          dense
+          no-caps
+          color="positive"
+          icon="check_circle"
+          label="Completar viaje"
+          :loading="completingId === item.id"
+          :disable="loading || deleting || completingId !== null"
+          @click="completeTrip(item.id)"
+        />
       </article>
 
       <div v-if="!module.cards.length" class="empty-state">
@@ -144,7 +167,7 @@ import KpiCard from 'components/KpiCard.vue'
 import StatusBadge from 'components/StatusBadge.vue'
 import { createModules } from 'src/data/modules'
 import RegistrationDialog from 'components/RegistrationDialog.vue'
-import { loadRecords, moduleData, records, deleteRecord } from 'src/services/registrations'
+import { loadRecords, moduleData, records, deleteRecord, updateRecord, schema } from 'src/services/registrations'
 import { getSession } from 'src/services/auth'
 
 const props = defineProps({
@@ -174,7 +197,23 @@ const module = computed(() => {
 const tableIds = computed(() => (records[key.value] || []).map(row => row.id))
 const editingRecord = ref(null)
 const deleting = ref(false)
+const completingId = ref(null)
 const $q = useQuasar()
+async function completeTrip(id) {
+  if (completingId.value !== null) return
+  const trip = records.viajes.find(row => row.id === id)
+  if (!trip || !['Programado', 'En transito'].includes(trip.status)) return
+  completingId.value = id
+  try {
+    const payload = Object.fromEntries(schema.viajes.map(field => [field.name, trip[field.name] ?? null]))
+    await updateRecord('viajes', id, { ...payload, status: 'Completado' })
+    $q.notify({ type: 'positive', message: 'Viaje completado correctamente.' })
+  } catch (error) {
+    $q.notify({ type: 'negative', message: error.message })
+  } finally {
+    completingId.value = null
+  }
+}
 const resourceKey = computed(() => key.value === 'gps' ? 'camiones' : key.value)
 function openCreate() {
   editingRecord.value = null
@@ -275,6 +314,9 @@ watch(key, () => { registrationOpen.value = false; editingRecord.value = null; f
 .map-panel {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 16px;
+  padding: 24px;
   min-height: 360px;
   border: 1px solid #dbeafe;
   border-radius: 12px;

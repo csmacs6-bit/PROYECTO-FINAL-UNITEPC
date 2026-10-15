@@ -47,3 +47,10 @@ export async function deleteRecord(key, id) {
   const index = records[key].findIndex(row => row.id === id)
   if (index !== -1) records[key].splice(index, 1)
 }
+
+export async function updateFreightPayment(id, payload) {
+  const result = await api(`/fletes/${id}/cobro`, { method: 'PUT', body: payload })
+  const index = records.cargas.findIndex(row => row.id === id)
+  if (index !== -1) records.cargas.splice(index, 1, result.data)
+  return result.data
+}

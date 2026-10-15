@@ -77,6 +77,7 @@ const items = [
   { label: 'Conductores', icon: 'engineering', to: '/conductores' },
   { label: 'Clientes', icon: 'domain', to: '/clientes' },
   { label: 'Cargas', icon: 'inventory_2', to: '/cargas' },
+  { label: 'Fletes', icon: 'payments', to: '/fletes' },
   { label: 'Combustible', icon: 'local_gas_station', to: '/combustible' },
   { label: 'Mantenimiento', icon: 'build', to: '/mantenimiento' },
   { label: 'GPS en Vivo', icon: 'location_on', to: '/gps' },

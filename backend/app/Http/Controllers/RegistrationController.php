@@ -93,6 +93,25 @@ class RegistrationController extends Controller
         return $data;
     }
 
+    public function updateFreightPayment(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'paymentStatus' => ['required', Rule::in(['Pendiente', 'Cobrado'])],
+            'paidAt' => ['nullable', 'date_format:Y-m-d', 'required_if:paymentStatus,Cobrado'],
+        ]);
+        return DB::transaction(function () use ($id, $data) {
+            $cargo = DB::table('cargas')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($cargo, 404, 'La carga ya no existe.');
+            abort_unless($cargo->status === 'Entregada', 422, 'Solo puedes registrar el cobro de cargas entregadas.');
+            DB::table('cargas')->where('id', $id)->update([
+                'paymentStatus' => $data['paymentStatus'],
+                'paidAt' => $data['paymentStatus'] === 'Cobrado' ? $data['paidAt'] : null,
+                'updated_at' => now(),
+            ]);
+            return response()->json(['data' => $this->safe(DB::table('cargas')->find($id))]);
+        });
+    }
+
     public function index(Request $request, string $module)
     {
         $this->authorizeModule($request, $module);
