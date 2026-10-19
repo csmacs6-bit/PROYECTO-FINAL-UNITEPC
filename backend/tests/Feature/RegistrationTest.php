@@ -42,6 +42,26 @@ class RegistrationTest extends TestCase
             $this->assertDatabaseHas($module, ['id' => $id]);
             $this->getJson('/api/'.$module)->assertOk()->assertJsonFragment(['id' => $id]);
         }
+        $trip = $fixtures['viajes'];
+        $this->postJson('/api/viajes', [...$trip, 'arrivalDate' => '2026-10-01'])->assertUnprocessable()->assertJsonValidationErrors('arrivalDate');
+        $this->postJson('/api/viajes', [...$trip, 'freight' => -1])->assertUnprocessable()->assertJsonValidationErrors('freight');
+        $this->putJson('/api/viajes/1', [...$trip, 'status' => 'Completado'])->assertUnprocessable()->assertJsonValidationErrors('arrivalDate');
+        DB::table('camiones')->where('id', 1)->update(['capacity' => 10]);
+        $this->postJson('/api/viajes', $trip)->assertUnprocessable()->assertJsonValidationErrors('truck_id');
+        $this->putJson('/api/viajes/1', $trip)->assertUnprocessable()->assertJsonValidationErrors('truck_id');
+        DB::table('camiones')->where('id', 1)->update(['capacity' => 30, 'status' => 'Mantenimiento']);
+        $this->postJson('/api/viajes', $trip)->assertUnprocessable()->assertJsonValidationErrors('truck_id');
+        DB::table('camiones')->where('id', 1)->update(['status' => 'Disponible']);
+        DB::table('conductores')->where('id', 1)->update(['status' => 'Inactivo']);
+        $this->postJson('/api/viajes', $trip)->assertUnprocessable()->assertJsonValidationErrors('driver_id');
+        DB::table('conductores')->where('id', 1)->update(['status' => 'Activo', 'expiresAt' => '2026-10-01']);
+        $this->putJson('/api/viajes/1', $trip)->assertUnprocessable()->assertJsonValidationErrors('driver_id');
+        DB::table('conductores')->where('id', 1)->update(['expiresAt' => '2027-10-08']);
+        DB::table('clientes')->insert([...$fixtures['clientes'], 'nit' => 'SECOND']);
+        $this->postJson('/api/viajes', [...$trip, 'client_id' => 2])->assertUnprocessable()->assertJsonValidationErrors('cargo_id');
+        $this->putJson('/api/viajes/1', [...$trip, 'client_id' => 2])->assertUnprocessable()->assertJsonValidationErrors('cargo_id');
+        $this->putJson('/api/viajes/1', [...$trip, 'status' => 'En transito'])->assertOk()->assertJsonPath('data.status', 'En transito');
+        $this->putJson('/api/viajes/1', [...$trip, 'status' => 'Completado', 'arrivalDate' => '2026-10-09'])->assertOk()->assertJsonPath('data.status', 'Completado');
         foreach ($fixtures as $module => $payload) {
             if ($module === 'usuarios') unset($payload['password'], $payload['password_confirmation']);
             $id = $module === 'usuarios' ? 2 : 1;

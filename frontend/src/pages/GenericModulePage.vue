@@ -203,6 +203,11 @@ async function completeTrip(id) {
   if (completingId.value !== null) return
   const trip = records.viajes.find(row => row.id === id)
   if (!trip || !['Programado', 'En transito'].includes(trip.status)) return
+  if (!trip.arrivalDate) {
+    openEdit(id)
+    $q.notify({ type: 'info', message: 'Registra la fecha de llegada y selecciona Completado para finalizar el viaje.' })
+    return
+  }
   completingId.value = id
   try {
     const payload = Object.fromEntries(schema.viajes.map(field => [field.name, trip[field.name] ?? null]))

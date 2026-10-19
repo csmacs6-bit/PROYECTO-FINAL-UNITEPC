@@ -75,8 +75,21 @@ watch(() => form.client_id, () => {
   if (props.moduleKey === 'viajes' && form.cargo_id && !records.cargas.some(row => row.id === form.cargo_id && row.client_id === form.client_id)) form.cargo_id = null
 })
 
+watch(() => form.cargo_id, (id) => {
+  if (props.moduleKey !== 'viajes' || !id || props.record) return
+  const cargo = records.cargas.find(row => row.id === id)
+  if (!cargo) return
+  form.client_id = cargo.client_id
+  form.origin = cargo.origin
+  form.destination = cargo.destination
+  form.date = cargo.departureDate
+  form.arrivalDate = cargo.arrivalDate || ''
+  form.freight = cargo.freight
+})
+
 function rules(field) {
   return [(value) => {
+    if (props.moduleKey === 'viajes' && field.name === 'arrivalDate' && form.status === 'Completado' && !value) return 'Registra la llegada para completar el viaje.'
     if (value === '' || value === null || value === undefined || (typeof value === 'string' && !value.trim())) return !field.required || (props.record && field.type === 'password') || 'Este campo es obligatorio.'
     if (field.type === 'password' && value.length < 8) return 'Usa al menos 8 caracteres.'
     if (field.type === 'number' && (!Number.isFinite(Number(value)) || Number(value) < (field.min ?? 0))) return `El mínimo es ${field.min ?? 0}.`

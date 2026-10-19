@@ -335,7 +335,7 @@
     },
     {
       "name": "date",
-      "label": "Fecha",
+      "label": "Fecha de salida",
       "type": "date",
       "required": true
     },

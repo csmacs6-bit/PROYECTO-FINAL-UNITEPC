@@ -32,7 +32,9 @@ export function createModules(data = {}) {
         subtitle: `${trip.origin} -> ${trip.destination}`,
         status: trip.status,
         meta: [
-          ['Fecha', trip.date],
+          ['Salida', trip.date],
+          ['Llegada', trip.arrivalDate || 'Pendiente'],
+          ['Carga', trip.cargo],
           ['Camion', trip.truck],
           ['Conductor', trip.driver],
           ['Cliente', trip.client],

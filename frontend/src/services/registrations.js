@@ -24,7 +24,7 @@ export function moduleData() {
     drivers: records.conductores.map((row) => ({ ...row, truck: find('camiones', row.truck_id, 'plate') })),
     clients: records.clientes,
     cargo: records.cargas.map((row) => ({ ...row, weight: `${row.weight} t`, dates: `${row.departureDate} / ${row.arrivalDate || 'Pendiente'}` })),
-    trips: records.viajes.map((row) => ({ ...row, freight: Number(row.freight), truck: find('camiones', row.truck_id, 'plate'), driver: find('conductores', row.driver_id, 'name'), client: find('clientes', row.client_id, 'name') })),
+    trips: records.viajes.map((row) => ({ ...row, freight: Number(row.freight), cargo: find('cargas', row.cargo_id, 'description'), truck: find('camiones', row.truck_id, 'plate'), driver: find('conductores', row.driver_id, 'name'), client: find('clientes', row.client_id, 'name') })),
     fuelRecords: records.combustible.map((row) => ({ ...row, liters: Number(row.liters), price: Number(row.price), truck: find('camiones', row.truck_id, 'plate') })),
     maintenance: records.mantenimiento.map((row) => ({ ...row, cost: Number(row.cost), truck: find('camiones', row.truck_id, 'plate'), nextDate: row.nextDate || 'Sin programar' })),
     users: records.usuarios.map((row) => ({ ...row, registeredAt: row.created_at?.slice(0, 10) })),

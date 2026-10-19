@@ -65,7 +65,8 @@ class RegistrationController extends Controller
             }
             if ($field['unique'] ?? false) $rules[$name][] = Rule::unique($module, $name)->ignore($id);
         }
-        return Validator::make($request->all(), $rules, [
+        if ($module === 'viajes') $rules['arrivalDate'][] = 'required_if:status,Completado';
+        $validator = Validator::make($request->all(), $rules, [
             'required' => 'El campo :attribute es obligatorio.',
             'unique' => 'El valor de :attribute ya está registrado.',
             'exists' => 'Selecciona un registro válido para :attribute.',
@@ -75,7 +76,27 @@ class RegistrationController extends Controller
             'email' => 'Ingresa un correo electrónico válido.',
             'after_or_equal' => 'La fecha de :attribute debe ser igual o posterior a :date.',
             'in' => 'Selecciona una opción válida para :attribute.',
-        ], $labels)->validate();
+        ], $labels);
+        if ($module === 'viajes') {
+            $validator->after(function ($validator) use ($request) {
+                if ($validator->errors()->isNotEmpty()) return;
+                $cargo = DB::table('cargas')->find($request->input('cargo_id'));
+                $truck = DB::table('camiones')->find($request->input('truck_id'));
+                $driver = DB::table('conductores')->find($request->input('driver_id'));
+                if ($cargo->client_id != $request->input('client_id')) {
+                    $validator->errors()->add('cargo_id', 'La carga seleccionada pertenece a otro cliente.');
+                }
+                if ($cargo->weight > $truck->capacity) {
+                    $validator->errors()->add('truck_id', 'El peso de la carga supera la capacidad del camión.');
+                }
+                if (in_array($request->input('status'), ['Programado', 'En transito'])) {
+                    if ($truck->status === 'Mantenimiento') $validator->errors()->add('truck_id', 'El camión está en mantenimiento.');
+                    if ($driver->status !== 'Activo') $validator->errors()->add('driver_id', 'El conductor debe estar activo.');
+                    if ($driver->expiresAt < $request->input('date')) $validator->errors()->add('driver_id', 'La licencia vence antes de la salida del viaje.');
+                }
+            });
+        }
+        return $validator->validate();
     }
 
     private function insert(string $module, array $data): array
