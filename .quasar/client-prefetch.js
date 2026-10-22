@@ -13,7 +13,7 @@
 
 
 
-import App from 'app/src/App.vue'
+import App from 'app/frontend/src/App.vue'
 let appPrefetch = typeof App.preFetch === 'function'
   ? App.preFetch
   : (

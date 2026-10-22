@@ -4,7 +4,8 @@
 - **backend/**: servidor Laravel.
 - **shared/**: definición de formularios compartida por ambas partes.
 
-Para iniciar la interfaz: `cd frontend`, `npm install` y `npm run dev`.
+Para iniciar la interfaz desde la carpeta principal: `quasar dev`.
+Para instalar las dependencias: `npm install`. También puedes iniciar desde `frontend` con `quasar dev`.
 
 # PROYECTO-FINAL-UNITEPC
 

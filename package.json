@@ -1,0 +1,16 @@
+{
+  "name": "sistema-de-transportes",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build"
+  },
+  "workspaces": ["frontend"],
+  "devDependencies": {
+    "@quasar/app-vite": "^1.9.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
